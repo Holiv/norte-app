@@ -200,3 +200,45 @@
 
 ### Como usar este documento no Claude Code
 Comece a Fase 1 pedindo ao Claude Code para: (a) inicializar o projeto na stack acima, (b) criar o schema com RLS, (c) implementar o CRUD e o cálculo do "livre do mês". Trate cada item numerado como um checkpoint de commit.
+
+---
+
+## Decisões de implementação — Fase 1 (tomadas durante os commits)
+
+**Arquitetura de dados (commit 1):** frontend fala direto com Supabase
+(`supabase-js`, protegido por RLS); Node.js existe só como Vercel
+Serverless Functions (`api/`), usadas a partir da Fase 2 onde há segredo
+(OCR de visão, chamadas a brapi/Banco Central).
+
+**Login (commit 2):** email + senha via Supabase Auth. Confirmação de
+email desativada no painel do Supabase para a Fase 1 (uso individual);
+reativar antes de expor o app a mais gente.
+
+**Schema (commit 3):**
+- **Sem tabela `public.users` própria** — `auth.users` (Supabase Auth) é
+  a fonte de verdade da identidade; as demais tabelas referenciam
+  `auth.users(id)` diretamente. Se surgir necessidade de dados de perfil
+  (nome de exibição, preferências), criar `public.profiles` nessa hora.
+- **Exclusão de conta (`accounts`) com transações vinculadas: bloqueada**
+  (`on delete restrict`). Protege histórico financeiro — usuário precisa
+  mover/apagar as transações antes de excluir a conta.
+- **Exclusão de categoria personalizada com transações vinculadas:
+  bloqueada** (`on delete restrict`), mesma lógica de proteção.
+  Categorias padrão do sistema (`user_id null`) nunca são excluíveis
+  por usuários (RLS de update/delete exige `user_id = auth.uid()`).
+- **`income_source_id` em `transactions` é auxiliar**: se a fonte de
+  renda for excluída, a transação só perde a referência (`on delete set
+  null`), sem bloquear a exclusão — diferente de conta/categoria porque
+  não é um campo de classificação financeira essencial.
+- **`debts.taxa_juros_anual`**: fração decimal (ex.: `0.129` = 12,9%
+  a.a.), mesma convenção da engine de projeção do CP4 (taxa mensal
+  derivada por composição, nunca anual/12).
+- **`debts.data_vencimento`**: interpretada como data prevista de
+  quitação final (última parcela) — não existe `data_inicio`
+  separada; é o único campo temporal que ancora se a dívida ainda está
+  ativa. Ajustar se a intenção era outra (ex.: dia de vencimento da
+  parcela mensal).
+- **Categorias padrão semeadas** (`supabase/seed.sql`): despesa → Fixo,
+  Alimentação, Lazer, Transporte, Saúde, Educação, Compras, Assinaturas,
+  Outros; receita → Salário, Renda Extra, Outros. Editável — usuário
+  pode criar as próprias a qualquer momento (já previsto no CP2).

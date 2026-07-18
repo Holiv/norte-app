@@ -26,12 +26,24 @@ npm run dev
 - `npm run build` — build de produção
 - `npm run test` — testes (Vitest)
 - `npm run lint` — lint (Oxlint)
+- `npm run db:run -- <arquivo.sql>` — aplica um arquivo SQL direto no Postgres do
+  Supabase (precisa de `DATABASE_URL` no `.env.local`, veja `.env.example`)
 
 ## Estrutura
 
 ```
 api/              Vercel Functions (Node.js) — só endpoints que exigem segredo
+scripts/          Scripts utilitários (ex.: aplicar migrations SQL)
 src/lib/calc/     Motores de cálculo puros (orçamento, projeção) — sem UI
 src/features/     Uma pasta por área de produto (accounts, income, debts, transactions, dashboard)
 supabase/         Migrations SQL (schema + RLS) e seed de categorias
+```
+
+## Migrations
+
+Cada mudança de schema vira um arquivo novo em `supabase/migrations/`
+(numeração sequencial, ex.: `0002_...sql`). Aplique com:
+
+```bash
+npm run db:run -- supabase/migrations/000X_nome.sql
 ```
