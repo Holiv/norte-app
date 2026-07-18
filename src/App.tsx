@@ -1,6 +1,7 @@
 import './App.css'
 import { useAuth } from './features/auth/useAuth'
 import { AuthForm } from './features/auth/AuthForm'
+import { AccountsPage } from './features/accounts/AccountsPage'
 
 function App() {
   const { session, loading, signOut } = useAuth()
@@ -23,11 +24,17 @@ function App() {
 
   return (
     <main>
-      <h1>App Financeiro</h1>
-      <p>Logado como {session.user.email}</p>
-      <button type="button" onClick={signOut}>
-        Sair
-      </button>
+      <header className="app-header">
+        <h1>App Financeiro</h1>
+        <div>
+          <span>{session.user.email}</span>
+          <button type="button" onClick={signOut}>
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <AccountsPage />
     </main>
   )
 }
