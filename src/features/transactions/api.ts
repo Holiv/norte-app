@@ -5,6 +5,7 @@ export interface TransactionInput {
   account_id: string
   category_id: string
   income_source_id: string | null
+  fixed_expense_id: string | null
   valor: number
   direcao: Direction
   data: string
@@ -14,7 +15,7 @@ export interface TransactionInput {
 export async function listTransactions(): Promise<Transaction[]> {
   const { data, error } = await supabase
     .from('transactions')
-    .select('*, accounts(nome), categories(nome), income_sources(nome)')
+    .select('*, accounts(nome), categories(nome), income_sources(nome), fixed_expenses(nome)')
     .order('data', { ascending: false })
     .order('created_at', { ascending: false })
 

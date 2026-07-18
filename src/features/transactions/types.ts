@@ -15,6 +15,7 @@ export interface Transaction {
   account_id: string
   category_id: string
   income_source_id: string | null
+  fixed_expense_id: string | null
   valor: number
   direcao: Direction
   data: string
@@ -24,4 +25,5 @@ export interface Transaction {
   accounts?: { nome: string } | null
   categories?: { nome: string } | null
   income_sources?: { nome: string } | null
+  fixed_expenses?: { nome: string } | null
 }

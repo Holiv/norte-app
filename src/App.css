@@ -108,6 +108,18 @@ main {
   font-size: 0.9rem;
 }
 
+.form-success {
+  color: #22c55e;
+  font-size: 0.9rem;
+}
+
+.page-hint {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  max-width: 480px;
+  margin: 0.25rem 0 1rem;
+}
+
 .item-list {
   list-style: none;
   padding: 0;

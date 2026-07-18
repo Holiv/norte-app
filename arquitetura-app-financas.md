@@ -242,3 +242,29 @@ reativar antes de expor o app a mais gente.
   Alimentação, Lazer, Transporte, Saúde, Educação, Compras, Assinaturas,
   Outros; receita → Salário, Renda Extra, Outros. Editável — usuário
   pode criar as próprias a qualquer momento (já previsto no CP2).
+
+**Motor "livre do mês" — peças de apoio (commit 8, antes do motor em si):**
+- **Toda transação de entrada exige fonte de renda** (`income_source_id`
+  obrigatório na UI para `direcao = 'entrada'`, campo "Nenhuma" removido).
+  Motivo: 1) evita contar renda fixa 2x (uma vez pelo `valor_esperado` da
+  fonte fixa, outra pela transação solta), já que o motor só soma como
+  "renda variável recebida" as entradas vinculadas a uma fonte do tipo
+  `variavel`; 2) cobre o caso de uso real do usuário (renda variável =
+  projetos fechados com clientes) sem precisar de schema novo: a fonte de
+  renda reutilizável (ex.: "Prestação de Serviço") entra por
+  `income_source_id`, e a identificação específica do projeto (ex.:
+  "Projeto estrutural do Jonathan") vai no campo `descricao`, que já
+  existia.
+- **Nova entidade `fixed_expenses`** ("contas fixas recorrentes": nome +
+  valor esperado mensal, ex. "Aluguel R$1500"). Cobre a parte de "contas
+  fixas" da fórmula do CP3, que não tinha tabela própria. Uso híbrido
+  proativo+reativo: por padrão o motor conta o `valor_esperado`; se uma
+  transação de saída do mês for vinculada a ela (`transactions.
+  fixed_expense_id`, opcional — diferente de `income_source_id`, que é
+  obrigatório só pra entrada), o motor usa o valor real lançado no lugar
+  do esperado. `on delete set null` (auxiliar, não bloqueia exclusão).
+- **Nova tabela `budget_rules`** (`user_id` como chave primária, 1 linha
+  por usuário): guarda a "guarda mínima" do mês como **valor único
+  atual**, sem histórico por mês — decisão explícita da Fase 1. Se no
+  futuro for preciso reconstruir o "livre do mês" de meses passados com
+  exatidão, criar versão histórica (chave por mês) nessa hora.

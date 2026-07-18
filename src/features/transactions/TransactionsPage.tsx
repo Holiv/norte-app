@@ -3,6 +3,8 @@ import { listAccounts } from '../accounts/api'
 import type { Account } from '../accounts/types'
 import { listIncomeSources } from '../income/api'
 import type { IncomeSource } from '../income/types'
+import { listFixedExpenses } from '../fixedExpenses/api'
+import type { FixedExpense } from '../fixedExpenses/types'
 import {
   createTransaction,
   deleteTransaction,
@@ -23,6 +25,7 @@ interface FormState {
   accountId: string
   categoryId: string
   incomeSourceId: string
+  fixedExpenseId: string
   descricao: string
 }
 
@@ -34,6 +37,7 @@ function emptyForm(defaults: { accountId: string; categoryId: string }): FormSta
     accountId: defaults.accountId,
     categoryId: defaults.categoryId,
     incomeSourceId: '',
+    fixedExpenseId: '',
     descricao: '',
   }
 }
@@ -43,6 +47,7 @@ export function TransactionsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([])
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -61,16 +66,18 @@ export function TransactionsPage() {
   async function refresh() {
     setError(null)
     try {
-      const [tx, acc, cat, inc] = await Promise.all([
+      const [tx, acc, cat, inc, fixed] = await Promise.all([
         listTransactions(),
         listAccounts(),
         listCategories(),
         listIncomeSources(),
+        listFixedExpenses(),
       ])
       setTransactions(tx)
       setAccounts(acc)
       setCategories(cat)
       setIncomeSources(inc)
+      setFixedExpenses(fixed)
       setForm((f) =>
         f.accountId || f.categoryId
           ? f
@@ -93,7 +100,8 @@ export function TransactionsPage() {
       ...f,
       direcao,
       categoryId: firstMatch?.id ?? '',
-      incomeSourceId: direcao === 'entrada' ? f.incomeSourceId : '',
+      incomeSourceId: direcao === 'entrada' ? (incomeSources[0]?.id ?? '') : '',
+      fixedExpenseId: direcao === 'saida' ? f.fixedExpenseId : '',
     }))
   }
 
@@ -106,6 +114,7 @@ export function TransactionsPage() {
       accountId: tx.account_id,
       categoryId: tx.category_id,
       incomeSourceId: tx.income_source_id ?? '',
+      fixedExpenseId: tx.fixed_expense_id ?? '',
       descricao: tx.descricao ?? '',
     })
   }
@@ -123,12 +132,19 @@ export function TransactionsPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+
+    if (form.direcao === 'entrada' && !form.incomeSourceId) {
+      setError('Selecione a fonte de renda dessa entrada.')
+      return
+    }
+
     setSubmitting(true)
     try {
       const input = {
         account_id: form.accountId,
         category_id: form.categoryId,
-        income_source_id: form.incomeSourceId || null,
+        income_source_id: form.direcao === 'entrada' ? form.incomeSourceId : null,
+        fixed_expense_id: form.direcao === 'saida' ? form.fixedExpenseId || null : null,
         valor: Number(form.valor),
         direcao: form.direcao,
         data: form.data,
@@ -251,17 +267,39 @@ export function TransactionsPage() {
             </select>
           </label>
 
-          {form.direcao === 'entrada' && (
+          {form.direcao === 'entrada' &&
+            (incomeSources.length === 0 ? (
+              <p className="form-error">
+                Cadastre uma fonte de renda (aba "Rendas") antes de lançar uma entrada.
+              </p>
+            ) : (
+              <label>
+                Fonte de renda
+                <select
+                  value={form.incomeSourceId}
+                  onChange={(e) => setForm((f) => ({ ...f, incomeSourceId: e.target.value }))}
+                  required
+                >
+                  {incomeSources.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+
+          {form.direcao === 'saida' && fixedExpenses.length > 0 && (
             <label>
-              Fonte de renda (opcional)
+              Conta fixa vinculada (opcional)
               <select
-                value={form.incomeSourceId}
-                onChange={(e) => setForm((f) => ({ ...f, incomeSourceId: e.target.value }))}
+                value={form.fixedExpenseId}
+                onChange={(e) => setForm((f) => ({ ...f, fixedExpenseId: e.target.value }))}
               >
                 <option value="">Nenhuma</option>
-                {incomeSources.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nome}
+                {fixedExpenses.map((fe) => (
+                  <option key={fe.id} value={fe.id}>
+                    {fe.nome}
                   </option>
                 ))}
               </select>
@@ -279,7 +317,10 @@ export function TransactionsPage() {
         </div>
 
         <div className="debt-form-actions">
-          <button type="submit" disabled={submitting}>
+          <button
+            type="submit"
+            disabled={submitting || (form.direcao === 'entrada' && incomeSources.length === 0)}
+          >
             {editingId ? 'Salvar' : 'Adicionar'}
           </button>
           {editingId && (
@@ -304,6 +345,8 @@ export function TransactionsPage() {
                 </strong>{' '}
                 <em>
                   {tx.data} · {tx.categories?.nome} · {tx.accounts?.nome}
+                  {tx.income_sources?.nome ? ` · ${tx.income_sources.nome}` : ''}
+                  {tx.fixed_expenses?.nome ? ` · ${tx.fixed_expenses.nome}` : ''}
                   {tx.descricao ? ` · ${tx.descricao}` : ''}
                 </em>
               </span>

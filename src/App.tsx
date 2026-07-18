@@ -6,12 +6,16 @@ import { AccountsPage } from './features/accounts/AccountsPage'
 import { IncomePage } from './features/income/IncomePage'
 import { DebtsPage } from './features/debts/DebtsPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
+import { FixedExpensesPage } from './features/fixedExpenses/FixedExpensesPage'
+import { SettingsPage } from './features/budget/SettingsPage'
 
 const TABS = [
   { key: 'transactions', label: 'Transações' },
   { key: 'accounts', label: 'Contas' },
   { key: 'income', label: 'Rendas' },
   { key: 'debts', label: 'Dívidas' },
+  { key: 'fixedExpenses', label: 'Contas fixas' },
+  { key: 'settings', label: 'Configurações' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -65,6 +69,8 @@ function App() {
       {tab === 'accounts' && <AccountsPage />}
       {tab === 'income' && <IncomePage />}
       {tab === 'debts' && <DebtsPage />}
+      {tab === 'fixedExpenses' && <FixedExpensesPage />}
+      {tab === 'settings' && <SettingsPage />}
     </main>
   )
 }
