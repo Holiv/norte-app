@@ -4,10 +4,12 @@ import { useAuth } from './features/auth/useAuth'
 import { AuthForm } from './features/auth/AuthForm'
 import { AccountsPage } from './features/accounts/AccountsPage'
 import { IncomePage } from './features/income/IncomePage'
+import { DebtsPage } from './features/debts/DebtsPage'
 
 const TABS = [
   { key: 'accounts', label: 'Contas' },
   { key: 'income', label: 'Rendas' },
+  { key: 'debts', label: 'Dívidas' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -59,6 +61,7 @@ function App() {
 
       {tab === 'accounts' && <AccountsPage />}
       {tab === 'income' && <IncomePage />}
+      {tab === 'debts' && <DebtsPage />}
     </main>
   )
 }

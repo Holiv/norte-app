@@ -130,3 +130,34 @@ main {
   display: flex;
   gap: 0.5rem;
 }
+
+.debt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  max-width: 480px;
+}
+
+.debt-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.debt-form input {
+  padding: 0.4rem;
+  font-size: 1rem;
+}
+
+.debt-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.debt-form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
