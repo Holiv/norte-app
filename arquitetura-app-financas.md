@@ -319,3 +319,57 @@ outras branches/PRs). Env vars de produção configuradas
 (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). URL de produção:
 https://norte-app-lyart.vercel.app — testado ponta a ponta (cadastro,
 login, dashboard) direto em produção, sem erros de console.
+
+---
+
+## Checkpoint de Design — Redesign visual (pós-Fase 1, antes da Fase 2)
+
+**Motivação:** app funcional mas visualmente básico/sem identidade.
+Decisão do usuário: pausar antes da Fase 2 pra fechar um padrão visual
+agora, evitando retrabalho conforme novas telas forem criadas.
+
+**Decisões (checkpoint com o usuário):**
+- **Abordagem:** Tailwind CSS v4 (`@tailwindcss/vite`) + componentes
+  reutilizáveis próprios (não uma lib pronta tipo shadcn/ui).
+- **Identidade de cor:** verde Arteris `#009364` como cor primária —
+  vem de um tema de dataviz (Power BI) que o usuário já usa em outros
+  projetos (`arteris_tema.json`, anexado 2026-07-18). Paleta completa
+  extraída daquele arquivo: `#009364` (primário), `#00734B` (primário
+  hover no claro), `#96A59E` (texto mudo/neutro), `#EEAA00` (aviso),
+  `#C0683C` (negativo/saída — usado no lugar de um vermelho genérico
+  pra manter tudo na família da paleta), `#212B27` (texto no tema
+  claro), `#6C7B74` (texto mudo no tema claro). Fonte: "Segoe UI"
+  (com fallback pra system-ui/Roboto).
+- **Tema:** **dark é a identidade nativa do app** (não segue o SO).
+  Usuário pode trocar pra claro manualmente nas Configurações,
+  preferência persistida em `localStorage`. Script inline no
+  `index.html` aplica a classe `.light` antes do primeiro paint
+  (evita flash de tema errado ao recarregar com "claro" selecionado).
+- **Escopo:** liberado pra repensar também navegação/layout, não só
+  cores — ex. sidebar no desktop + navegação mobile responsiva,
+  formulários em modal em vez de sempre visíveis, cards em vez de
+  listas simples.
+
+**Mecanismo de tema:** tokens de cor via CSS custom properties em
+`:root` (dark, valores diretos) e `:root.light` (override completo),
+referenciados dentro de `@theme` do Tailwind (`--color-canvas`,
+`--color-surface`, `--color-ink`, `--color-primary`, etc.) — gera
+utilities como `bg-canvas`, `text-ink`, `bg-primary` que já respeitam
+o tema ativo automaticameante, sem precisar de variante `dark:` no
+JSX. `ThemeProvider` (`src/lib/ThemeProvider.tsx`) expõe
+`useTheme()` pra ler/trocar o tema de dentro de componentes React.
+
+**Ordem de commits do redesign:**
+1. Setup Tailwind + tokens de design (dark nativo + light) — sem UI nova
+2. Componentes reutilizáveis (Button, Input, Select, Card, Modal, nav)
+3. Shell do app: sidebar desktop + navegação mobile, toggle de tema
+4. Dashboard redesenhado
+5. Login/Cadastro redesenhado
+6. Contas + Rendas redesenhadas (modal + cards)
+7. Dívidas + Contas fixas redesenhadas
+8. Transações redesenhada
+9. Configurações redesenhada + polimento responsivo final
+
+Páginas ainda não migradas continuam funcionando com o CSS antigo
+(`App.css`) durante a transição — sem quebra de funcionalidade entre
+commits, só visual desatualizado até chegar a vez de cada tela.

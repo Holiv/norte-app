@@ -1,24 +1,66 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
+@import 'tailwindcss';
 
-  font: 18px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light dark;
+/* Design tokens — nomes usados pelas utilities do Tailwind (bg-canvas, text-ink, etc.).
+   Os valores em si vêm das custom properties abaixo, trocadas via classe .light no <html>. */
+@theme {
+  --color-canvas: var(--app-canvas);
+  --color-surface: var(--app-surface);
+  --color-surface-2: var(--app-surface-2);
+  --color-border: var(--app-border);
+  --color-ink: var(--app-ink);
+  --color-ink-muted: var(--app-ink-muted);
+  --color-primary: var(--app-primary);
+  --color-primary-hover: var(--app-primary-hover);
+  --color-primary-muted: var(--app-primary-muted);
+  --color-warning: var(--app-warning);
+  --color-negative: var(--app-negative);
+
+  --font-sans: 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
+}
+
+:root {
+  /* Dark — identidade nativa do app (verde Arteris #009364 sobre base escura) */
+  --app-canvas: #0b0f0d;
+  --app-surface: #121613;
+  --app-surface-2: #181e1a;
+  --app-border: #262f2a;
+  --app-ink: #f5f7f6;
+  --app-ink-muted: #96a59e;
+  --app-primary: #009364;
+  --app-primary-hover: #00a671;
+  --app-primary-muted: #0f2a20;
+  --app-warning: #eeaa00;
+  --app-negative: #c0683c;
+
+  /* aliases legadas — usadas pelas páginas ainda não migradas para Tailwind */
+  --text: var(--app-ink-muted);
+  --text-h: var(--app-ink);
+  --bg: var(--app-canvas);
+
+  color-scheme: dark;
   color: var(--text);
   background: var(--bg);
+  font: 16px/145% var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-  }
+:root.light {
+  --app-canvas: #ffffff;
+  --app-surface: #f5f7f6;
+  --app-surface-2: #eef1ef;
+  --app-border: #e0e5e2;
+  --app-ink: #212b27;
+  --app-ink-muted: #6c7b74;
+  --app-primary: #009364;
+  --app-primary-hover: #00734b;
+  --app-primary-muted: #e3f3ec;
+  --app-warning: #eeaa00;
+  --app-negative: #c0683c;
+
+  color-scheme: light;
 }
 
 body {
