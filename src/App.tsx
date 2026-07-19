@@ -9,18 +9,8 @@ import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { FixedExpensesPage } from './features/fixedExpenses/FixedExpensesPage'
 import { SettingsPage } from './features/budget/SettingsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
-
-const TABS = [
-  { key: 'dashboard', label: 'Dashboard' },
-  { key: 'transactions', label: 'Transações' },
-  { key: 'accounts', label: 'Contas' },
-  { key: 'income', label: 'Rendas' },
-  { key: 'debts', label: 'Dívidas' },
-  { key: 'fixedExpenses', label: 'Contas fixas' },
-  { key: 'settings', label: 'Configurações' },
-] as const
-
-type TabKey = (typeof TABS)[number]['key']
+import { AppShell } from './components/layout/AppShell'
+import type { TabKey } from './components/layout/nav-items'
 
 function App() {
   const { session, loading, signOut } = useAuth()
@@ -28,45 +18,27 @@ function App() {
 
   if (loading) {
     return (
-      <main>
-        <p>Carregando...</p>
-      </main>
+      <div className="flex min-h-screen items-center justify-center bg-canvas text-ink-muted">
+        Carregando...
+      </div>
     )
   }
 
   if (!session) {
     return (
-      <main>
+      <div className="flex min-h-screen items-center justify-center bg-canvas p-4">
         <AuthForm />
-      </main>
+      </div>
     )
   }
 
   return (
-    <main>
-      <header className="app-header">
-        <h1>App Financeiro</h1>
-        <div>
-          <span>{session.user.email}</span>
-          <button type="button" onClick={signOut}>
-            Sair
-          </button>
-        </div>
-      </header>
-
-      <nav className="tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            className={tab === t.key ? 'tab active' : 'tab'}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
+    <AppShell
+      activeTab={tab}
+      onTabChange={setTab}
+      userEmail={session.user.email ?? ''}
+      onSignOut={signOut}
+    >
       {tab === 'dashboard' && <DashboardPage />}
       {tab === 'transactions' && <TransactionsPage />}
       {tab === 'accounts' && <AccountsPage />}
@@ -74,7 +46,7 @@ function App() {
       {tab === 'debts' && <DebtsPage />}
       {tab === 'fixedExpenses' && <FixedExpensesPage />}
       {tab === 'settings' && <SettingsPage />}
-    </main>
+    </AppShell>
   )
 }
 
