@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabaseClient'
-import type { ExtractedReceiptData, Receipt, ReceiptTipo } from './types'
+import type { ExtractedReceiptData, ExtractedStatementData, Receipt, ReceiptTipo } from './types'
 
 export async function uploadReceipt(file: File, tipo: ReceiptTipo): Promise<Receipt> {
   const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -44,6 +44,28 @@ export async function extractReceipt(receiptId: string): Promise<ExtractedReceip
     throw new Error(body.error ?? 'Falha ao extrair dados do comprovante')
   }
   return body.data as ExtractedReceiptData
+}
+
+export async function extractStatement(receiptId: string): Promise<ExtractedStatementData> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError) throw sessionError
+  const token = sessionData.session?.access_token
+  if (!token) throw new Error('Sessão inválida — faça login novamente.')
+
+  const res = await fetch('/api/extract-statement', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ receiptId }),
+  })
+
+  const body = await res.json()
+  if (!res.ok) {
+    throw new Error(body.error ?? 'Falha ao extrair dados do extrato')
+  }
+  return body.data as ExtractedStatementData
 }
 
 export async function deleteReceipt(id: string): Promise<void> {

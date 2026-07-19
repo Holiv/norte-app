@@ -503,4 +503,50 @@ pedir.
   escolhida manualmente) — assim o aprendizado se reforça ou se
   corrige a cada uso, conforme CP5.
 
-**Pendente:** upload/reconciliação de extrato.
+**Commit 4 — upload e reconciliação de extrato:**
+- **Decisões de produto confirmadas com o usuário antes de implementar:**
+  - Extrato só extrai **saídas** (débitos/Pix enviados) — entradas são
+    raras no dia a dia (valor fixo mensal + eventual "Prestação de
+    Serviço") e continuam lançadas manualmente na tela de Transações.
+    O modelo de visão nem tenta identificar direção por linha; todo
+    item extraído do extrato é saída, ponto.
+  - Revisão em **tabela única com todas as linhas novas de uma vez**
+    (não modal um-a-um como o comprovante Pix) — extrato pode trazer
+    várias transações, e revisar uma por uma seria muito atrito.
+- Reaproveita a tabela `receipts` (`tipo = 'extrato'`), mas
+  `dados_extraidos` guarda `{ linhas: [...] }` (array), diferente do
+  objeto único do comprovante Pix. `api/extract-statement.ts`
+  (Vercel Function separada, mesmo padrão de auth/storage/schema
+  embutido do `extract-receipt.ts`): prompt instrui o modelo a
+  extrair só as saídas, cada linha com valor, data, favorecido
+  (opcional) e descrição sugerida.
+- **Sem seletor de data global**: cada linha extraída já vem com sua
+  própria data (a extração já é estruturada por linha, diferente de
+  quando o CP5 foi desenhado). Isso implementa de graça a "extensão
+  natural" de suporte a extrato de intervalo — um único upload pode
+  cobrir várias datas sem trabalho extra.
+- **Motor de reconciliação** (`src/features/categorization/reconcile.ts`,
+  puro, testado com Vitest): busca transações de saída já registradas
+  nas datas que aparecem no extrato, casa cada linha por
+  `(valor, data)` tratando multiplicidade (cada transação registrada
+  só "consome" uma linha do extrato). Linha sem par → **nova**
+  (candidata a adicionar). Transação registrada sem par no extrato →
+  **divergente** (alerta informativo no topo da revisão — "N
+  transação(ões) já lançada(s) nessas datas não aparecem no extrato,
+  confira" — nunca corrige nada sozinho, só avisa, conforme CP5).
+- Tela de revisão (`StatementUploadModal`): uma conta só pra todo o
+  lote (um extrato = uma conta bancária), cada linha nova com
+  valor/data/descrição editáveis, categoria com a mesma sugestão por
+  favorecido do Commit 3, e um ícone de lixeira pra remover uma linha
+  do lote antes de confirmar. Um botão só ("Adicionar N transações")
+  salva tudo de uma vez; cada transação salva atualiza a memória de
+  categorização por favorecido, igual ao comprovante Pix.
+- `createTransaction`/`TransactionInput` ganharam `origem` e
+  `receipt_id` opcionais (antes só existiam na coluna do banco, mas
+  nunca eram passados pelo frontend — toda transação virava `origem:
+  'manual'` mesmo vindo de comprovante). Corrigido também no
+  `ReceiptUploadModal` do Commit 2: agora grava `origem:
+  'comprovante_pix'` e o `receipt_id` de verdade.
+
+**Fase 2 (ingestão sem fricção) — CONCLUÍDA.** Próxima fase só
+começa a pedido explícito do usuário.

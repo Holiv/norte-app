@@ -142,6 +142,8 @@ export function ReceiptUploadModal({
         direcao,
         data,
         descricao: descricao || null,
+        origem: 'comprovante_pix',
+        receipt_id: receiptId,
       })
       const favorecido = favorecidoFor(extractedData, direcao)
       if (favorecido) {

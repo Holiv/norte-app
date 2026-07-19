@@ -7,7 +7,7 @@ export interface Receipt {
   arquivo: string
   tipo: ReceiptTipo
   status: ReceiptStatus
-  dados_extraidos: ExtractedReceiptData | null
+  dados_extraidos: ExtractedReceiptData | ExtractedStatementData | null
   erro_mensagem: string | null
   created_at: string
 }
@@ -23,4 +23,15 @@ export interface ExtractedReceiptData {
   autenticacao: string | null
   id_transacao: string | null
   descricao_sugerida: string
+}
+
+export interface ExtractedStatementLine {
+  valor: number
+  data: string // 'YYYY-MM-DD'
+  favorecido: string | null
+  descricao_sugerida: string
+}
+
+export interface ExtractedStatementData {
+  linhas: ExtractedStatementLine[]
 }

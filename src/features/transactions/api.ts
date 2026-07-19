@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabaseClient'
-import type { Category, Direction, Transaction } from './types'
+import type { Category, Direction, Origem, Transaction } from './types'
 
 export interface TransactionInput {
   account_id: string
@@ -10,6 +10,8 @@ export interface TransactionInput {
   direcao: Direction
   data: string
   descricao: string | null
+  origem?: Origem
+  receipt_id?: string | null
 }
 
 export async function listTransactions(): Promise<Transaction[]> {
@@ -23,14 +25,33 @@ export async function listTransactions(): Promise<Transaction[]> {
   return data
 }
 
+export async function listTransactionsByDates(dates: string[]): Promise<Transaction[]> {
+  if (dates.length === 0) return []
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*, accounts(nome), categories(nome), income_sources(nome), fixed_expenses(nome)')
+    .in('data', dates)
+    .eq('direcao', 'saida')
+
+  if (error) throw error
+  return data
+}
+
 export async function createTransaction(input: TransactionInput): Promise<Transaction> {
   const { data: userData, error: userError } = await supabase.auth.getUser()
   if (userError) throw userError
   if (!userData.user) throw new Error('Usuário não autenticado')
 
+  const { origem, receipt_id, ...rest } = input
+
   const { data, error } = await supabase
     .from('transactions')
-    .insert({ ...input, origem: 'manual', user_id: userData.user.id })
+    .insert({
+      ...rest,
+      origem: origem ?? 'manual',
+      receipt_id: receipt_id ?? null,
+      user_id: userData.user.id,
+    })
     .select()
     .single()
 
