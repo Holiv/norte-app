@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './App.css'
 import { useAuth } from './features/auth/useAuth'
 import { AuthForm } from './features/auth/AuthForm'
 import { AccountsPage } from './features/accounts/AccountsPage'

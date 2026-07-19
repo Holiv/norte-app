@@ -334,12 +334,13 @@ agora, evitando retrabalho conforme novas telas forem criadas.
 - **Identidade de cor:** verde Arteris `#009364` como cor primária —
   vem de um tema de dataviz (Power BI) que o usuário já usa em outros
   projetos (`arteris_tema.json`, anexado 2026-07-18). Paleta completa
-  extraída daquele arquivo: `#009364` (primário), `#00734B` (primário
-  hover no claro), `#96A59E` (texto mudo/neutro), `#EEAA00` (aviso),
-  `#C0683C` (negativo/saída — usado no lugar de um vermelho genérico
-  pra manter tudo na família da paleta), `#212B27` (texto no tema
-  claro), `#6C7B74` (texto mudo no tema claro). Fonte: "Segoe UI"
-  (com fallback pra system-ui/Roboto).
+  extraída daquele arquivo: `#009364` (primário/positivo), `#00734B`
+  (primário hover no claro), `#96A59E` (texto mudo/neutro), `#EEAA00`
+  (aviso **e** negativo/saída — é o "bad" do próprio tema Arteris,
+  ajustado depois do commit 4 pra substituir um vermelho genérico que
+  não vinha da paleta), `#212B27` (texto no tema claro), `#6C7B74`
+  (texto mudo no tema claro). Fonte: "Segoe UI" (com fallback pra
+  system-ui/Roboto).
 - **Tema:** **dark é a identidade nativa do app** (não segue o SO).
   Usuário pode trocar pra claro manualmente nas Configurações,
   preferência persistida em `localStorage`. Script inline no
@@ -373,3 +374,20 @@ JSX. `ThemeProvider` (`src/lib/ThemeProvider.tsx`) expõe
 Páginas ainda não migradas continuam funcionando com o CSS antigo
 (`App.css`) durante a transição — sem quebra de funcionalidade entre
 commits, só visual desatualizado até chegar a vez de cada tela.
+
+### Checkpoint de Design — CONCLUÍDO
+
+Todos os 9 commits do redesign feitos e testados (browser headless,
+mobile/tablet/desktop). `App.css` foi completamente removido no
+commit 9 — todo o app agora usa Tailwind + os tokens de design. Além
+do planejado originalmente:
+- Toggle de tema (Escuro/Claro) também disponível dentro da própria
+  tela de Configurações, não só no shell — pedido explícito do
+  usuário ("se quiser claro, mudar pra claro em configurações").
+- Transações manteve o formulário sempre visível (não virou modal
+  como as outras telas) — é a ação mais frequente do app, e um modal
+  adicionaria fricção à métrica mais importante do produto ("poucos
+  toques").
+
+Pronto pra retomar a Fase 2 (Ingestão sem fricção) quando o usuário
+pedir.
