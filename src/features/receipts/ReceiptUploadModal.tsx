@@ -6,7 +6,13 @@ import type { Category, Direction } from '../transactions/types'
 import type { Account } from '../accounts/types'
 import type { IncomeSource } from '../income/types'
 import type { FixedExpense } from '../fixedExpenses/types'
-import { Button, Field, Input, Modal, Select } from '../../components/ui'
+import { rememberFavorecidoCategory, suggestCategoryForFavorecido } from '../categorization/api'
+import { Badge, Button, Field, Input, Modal, Select } from '../../components/ui'
+
+function favorecidoFor(extracted: ExtractedReceiptData | null, direcao: Direction): string | null {
+  if (!extracted) return null
+  return direcao === 'entrada' ? extracted.de_nome : extracted.para_nome
+}
 
 interface Props {
   open: boolean
@@ -32,12 +38,14 @@ export function ReceiptUploadModal({
   const [stage, setStage] = useState<Stage>('pick')
   const [error, setError] = useState<string | null>(null)
   const [receiptId, setReceiptId] = useState<string | null>(null)
+  const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null)
 
   const [direcao, setDirecaoState] = useState<Direction>('saida')
   const [valor, setValor] = useState('')
   const [data, setData] = useState('')
   const [accountId, setAccountId] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [categorySuggested, setCategorySuggested] = useState(false)
   const [incomeSourceId, setIncomeSourceId] = useState('')
   const [fixedExpenseId, setFixedExpenseId] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -46,11 +54,13 @@ export function ReceiptUploadModal({
     setStage('pick')
     setError(null)
     setReceiptId(null)
+    setExtractedData(null)
     setDirecaoState('saida')
     setValor('')
     setData('')
     setAccountId('')
     setCategoryId('')
+    setCategorySuggested(false)
     setIncomeSourceId('')
     setFixedExpenseId('')
     setDescricao('')
@@ -79,7 +89,12 @@ export function ReceiptUploadModal({
       const receipt = await uploadReceipt(file, 'comprovante_pix')
       setReceiptId(receipt.id)
       const extracted = await extractReceipt(receipt.id)
-      applyExtracted(extracted)
+      setExtractedData(extracted)
+      setValor(extracted.valor != null ? String(extracted.valor) : '')
+      setData(extracted.data ?? '')
+      setDescricao(extracted.descricao_sugerida ?? '')
+      setAccountId(accounts[0]?.id ?? '')
+      await applyCategoryForFavorecido(extracted, 'saida')
       setStage('review')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -87,22 +102,27 @@ export function ReceiptUploadModal({
     }
   }
 
-  function applyExtracted(extracted: ExtractedReceiptData) {
-    setValor(extracted.valor != null ? String(extracted.valor) : '')
-    setData(extracted.data ?? '')
-    setDescricao(extracted.descricao_sugerida ?? '')
-    setAccountId(accounts[0]?.id ?? '')
-    const firstDespesa = categories.find((c) => c.tipo === 'despesa')
-    setCategoryId(firstDespesa?.id ?? '')
+  async function applyCategoryForFavorecido(extracted: ExtractedReceiptData | null, dir: Direction) {
+    const favorecido = favorecidoFor(extracted, dir)
+    if (favorecido) {
+      const suggested = await suggestCategoryForFavorecido(favorecido)
+      if (suggested && categories.some((c) => c.id === suggested)) {
+        setCategoryId(suggested)
+        setCategorySuggested(true)
+        return
+      }
+    }
+    const tipo = dir === 'entrada' ? 'receita' : 'despesa'
+    const firstMatch = categories.find((c) => c.tipo === tipo)
+    setCategoryId(firstMatch?.id ?? '')
+    setCategorySuggested(false)
   }
 
   function setDirecao(next: Direction) {
     setDirecaoState(next)
-    const tipo = next === 'entrada' ? 'receita' : 'despesa'
-    const firstMatch = categories.find((c) => c.tipo === tipo)
-    setCategoryId(firstMatch?.id ?? '')
     setIncomeSourceId(next === 'entrada' ? (incomeSources[0]?.id ?? '') : '')
     setFixedExpenseId('')
+    applyCategoryForFavorecido(extractedData, next)
   }
 
   async function handleSave() {
@@ -123,6 +143,10 @@ export function ReceiptUploadModal({
         data,
         descricao: descricao || null,
       })
+      const favorecido = favorecidoFor(extractedData, direcao)
+      if (favorecido) {
+        await rememberFavorecidoCategory(favorecido, categoryId)
+      }
       onSaved()
       handleClose()
     } catch (err) {
@@ -212,8 +236,22 @@ export function ReceiptUploadModal({
                 ))}
               </Select>
             </Field>
-            <Field label="Categoria">
-              <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+            <Field
+              label="Categoria"
+              hint={
+                categorySuggested ? (
+                  <Badge tone="primary">Sugerido com base em lançamentos anteriores</Badge>
+                ) : undefined
+              }
+            >
+              <Select
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value)
+                  setCategorySuggested(false)
+                }}
+                required
+              >
                 {categoriesForDirection.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome}

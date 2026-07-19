@@ -476,5 +476,31 @@ pedir.
   Development) — a função só roda em deploy, não no `npm run dev`
   local.
 
-**Pendente:** categorização automática com aprendizado (memória
-favorecido→categoria) + upload/reconciliação de extrato.
+**Commit 3 — categorização automática com aprendizado:**
+- Tabela `payee_category_memory` (id, user_id, favorecido_normalizado,
+  category_id, updated_at), RLS por `user_id = auth.uid()`, unique em
+  `(user_id, favorecido_normalizado)` — um mapeamento por favorecido
+  por usuário, atualizado (upsert) a cada confirmação.
+- **Favorecido** = `para_nome` extraído do comprovante quando a
+  transação é saída, `de_nome` quando é entrada (esses são os únicos
+  campos "limpos" e estruturados que temos — a extração da IA, não
+  texto livre). Normalização: trim + lowercase + colapso de espaços
+  (sem remoção de acentos por enquanto).
+- **Escopo desta primeira versão: só o fluxo de importação de
+  comprovante.** O lançamento manual de transação não tem campo de
+  favorecido estruturado (só `descricao` livre, editável, sem padrão
+  consistente pra casar), então a memória não se aplica lá — decisão
+  natural da arquitetura de extração já fechada no Commit 1, não uma
+  ambiguidade nova. Quando o extrato entrar (próximo commit), se ele
+  também trouxer favorecido estruturado, a mesma tabela/lógica serve.
+- Na tela de revisão do comprovante: ao extrair (ou ao trocar
+  Entrada/Saída), busca `payee_category_memory` pelo favorecido da
+  direção atual; se achar, pré-seleciona a categoria e mostra um badge
+  "Sugerido com base em lançamentos anteriores". Se não achar, cai no
+  comportamento anterior (primeira categoria de despesa/receita).
+- Ao salvar a transação, grava/atualiza a memória com a categoria que
+  o usuário efetivamente confirmou (seja a sugestão aceita, seja uma
+  escolhida manualmente) — assim o aprendizado se reforça ou se
+  corrige a cada uso, conforme CP5.
+
+**Pendente:** upload/reconciliação de extrato.
