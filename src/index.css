@@ -14,6 +14,7 @@
   --color-primary-muted: var(--app-primary-muted);
   --color-warning: var(--app-warning);
   --color-negative: var(--app-negative);
+  --color-negative-muted: var(--app-negative-muted);
 
   --font-sans: 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
 }
@@ -30,7 +31,8 @@
   --app-primary-hover: #00a671;
   --app-primary-muted: #0f2a20;
   --app-warning: #eeaa00;
-  --app-negative: #c0683c;
+  --app-negative: #eeaa00;
+  --app-negative-muted: #2b2410;
 
   /* aliases legadas — usadas pelas páginas ainda não migradas para Tailwind */
   --text: var(--app-ink-muted);
@@ -58,7 +60,8 @@
   --app-primary-hover: #00734b;
   --app-primary-muted: #e3f3ec;
   --app-warning: #eeaa00;
-  --app-negative: #c0683c;
+  --app-negative: #eeaa00;
+  --app-negative-muted: #fdf3d9;
 
   color-scheme: light;
 }
