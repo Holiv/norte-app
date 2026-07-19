@@ -454,6 +454,27 @@ pedir.
   Custo observado: ~2850 tokens de entrada + ~230 de saída por
   extração (frações de centavo).
 
-**Pendente:** UI de upload (escolher arquivo, sem câmera — decisão do
-usuário, já que ele não fotografa comprovante) + tela de confirmação
-(sempre) + categorização com aprendizado + reconciliação de extrato.
+**Commit 2 — upload + tela de confirmação (sempre):**
+- `ReceiptUploadModal` (`src/features/receipts/`): input de arquivo
+  simples (sem câmera — decisão do usuário, ele não fotografa
+  comprovante, salva o arquivo e escolhe no app), sem drag-and-drop
+  por enquanto. Estados: `pick → processing → review → saving`.
+- Upload vai direto pro Storage (`comprovantes/{user_id}/{uuid}.ext`)
+  usando a sessão do próprio usuário — sem passar pelo backend.
+  Depois cria a linha em `receipts` (status `processando`) e chama
+  `/api/extract-receipt`.
+- Tela de review pré-preenche valor/data/descrição com o que veio da
+  extração, mas direção, conta, categoria, fonte de renda e conta
+  fixa são sempre decisão do usuário (mesmas regras de obrigatoriedade
+  da tela de Transações manual) — nada salva sem essa confirmação,
+  conforme CP5.
+- Cancelar a revisão apaga o `receipts` criado (limpeza best-effort,
+  evita lixo acumulando no Storage de tentativas abandonadas).
+- Botão "Importar comprovante" na aba Transações (onde já vive o
+  fluxo manual).
+- `ANTHROPIC_API_KEY` configurada no Vercel (Production/Preview/
+  Development) — a função só roda em deploy, não no `npm run dev`
+  local.
+
+**Pendente:** categorização automática com aprendizado (memória
+favorecido→categoria) + upload/reconciliação de extrato.

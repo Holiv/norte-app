@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Upload } from 'lucide-react'
 import { listAccounts } from '../accounts/api'
 import type { Account } from '../accounts/types'
 import { listIncomeSources } from '../income/api'
 import type { IncomeSource } from '../income/types'
 import { listFixedExpenses } from '../fixedExpenses/api'
 import type { FixedExpense } from '../fixedExpenses/types'
+import { ReceiptUploadModal } from '../receipts/ReceiptUploadModal'
 import {
   createTransaction,
   deleteTransaction,
@@ -53,6 +54,7 @@ export function TransactionsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm({ accountId: '', categoryId: '' }))
   const [submitting, setSubmitting] = useState(false)
 
@@ -198,7 +200,13 @@ export function TransactionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-xl font-semibold text-ink">Transações</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-ink">Transações</h2>
+        <Button variant="secondary" size="sm" onClick={() => setReceiptModalOpen(true)}>
+          <Upload size={16} />
+          Importar comprovante
+        </Button>
+      </div>
 
       <Card>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -383,6 +391,16 @@ export function TransactionsPage() {
           ))}
         </Card>
       )}
+
+      <ReceiptUploadModal
+        open={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+        onSaved={refresh}
+        accounts={accounts}
+        categories={categories}
+        incomeSources={incomeSources}
+        fixedExpenses={fixedExpenses}
+      />
     </div>
   )
 }
