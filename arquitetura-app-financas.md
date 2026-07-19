@@ -268,3 +268,30 @@ reativar antes de expor o app a mais gente.
   atual**, sem histórico por mês — decisão explícita da Fase 1. Se no
   futuro for preciso reconstruir o "livre do mês" de meses passados com
   exatidão, criar versão histórica (chave por mês) nessa hora.
+
+**Motor "livre do mês" (commit 9):** função pura `calcularLivreDoMes` em
+`src/lib/calc/livreDoMes.ts`, com 8 testes unitários (Vitest). Sem
+acesso a rede — recebe os dados já buscados e devolve o breakdown
+completo (`rendaFixa`, `rendaVariavelRecebida`, `dividasAtivas`,
+`contasFixas` com detalhe por conta fixa, `guardaMinima`, `livre`).
+`src/features/dashboard/api.ts` faz a ponte com o Supabase.
+
+**Dashboard com progressive disclosure (commit 10 — fecha a Fase 1):**
+mostra só o valor livre do mês por padrão; botão "Ver detalhes" expande
+o breakdown completo, incluindo por conta fixa qual valor foi usado
+(esperado vs. lançado). Virou a aba padrão do app ao logar (era
+"Transações") — decisão de UX não bloqueante: ver o panorama do mês
+antes de registrar algo pareceu mais natural que abrir direto no
+formulário; fácil de reverter se não fizer sentido no uso real.
+
+---
+
+## Fase 1 — CONCLUÍDA
+
+Todos os 5 itens do CP6 (setup, schema+RLS, CRUD manual, motor "livre
+do mês", dashboard) implementados e testados ponta a ponta em
+navegador headless a cada commit. 10 commits no total, todos no
+GitHub (`Holiv/norte-app`, branch `main`). Deploy no Vercel ainda não
+foi feito — próximo passo natural antes de considerar a Fase 1
+"em uso real", ou já emendar direto na Fase 2 conforme o usuário
+decidir.

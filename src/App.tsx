@@ -8,8 +8,10 @@ import { DebtsPage } from './features/debts/DebtsPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { FixedExpensesPage } from './features/fixedExpenses/FixedExpensesPage'
 import { SettingsPage } from './features/budget/SettingsPage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 
 const TABS = [
+  { key: 'dashboard', label: 'Dashboard' },
   { key: 'transactions', label: 'Transações' },
   { key: 'accounts', label: 'Contas' },
   { key: 'income', label: 'Rendas' },
@@ -22,7 +24,7 @@ type TabKey = (typeof TABS)[number]['key']
 
 function App() {
   const { session, loading, signOut } = useAuth()
-  const [tab, setTab] = useState<TabKey>('transactions')
+  const [tab, setTab] = useState<TabKey>('dashboard')
 
   if (loading) {
     return (
@@ -65,6 +67,7 @@ function App() {
         ))}
       </nav>
 
+      {tab === 'dashboard' && <DashboardPage />}
       {tab === 'transactions' && <TransactionsPage />}
       {tab === 'accounts' && <AccountsPage />}
       {tab === 'income' && <IncomePage />}
