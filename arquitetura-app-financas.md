@@ -196,7 +196,24 @@
 
 ### Pendências a resolver durante a implementação
 - Carência/vesting do match da previdência (ajustar `investment_contributions` se houver).
-- Confirmar layout dos comprovantes Pix dos bancos que você mais usa (ajuda a calibrar a extração).
+- ~~Confirmar layout dos comprovantes Pix dos bancos que você mais usa~~ — **RESOLVIDO**,
+  ver "Layout de comprovante Pix — referência p/ Fase 2" abaixo.
+
+### Layout de comprovante Pix — referência p/ Fase 2 (Itaú)
+Comprovante real anexado pelo usuário (2026-07-18), campos disponíveis
+pro modelo de visão extrair:
+- **Valor** (destaque no topo, formato "R$ 150,00")
+- **Data/hora** ("Realizado em 15/07/2026 às 07:38:17")
+- **De**: nome completo, CPF mascarado (`***.958.817-**`), instituição
+- **Para**: nome completo, CPF mascarado, instituição, **chave Pix**
+  (nesse exemplo, um email)
+- **Autenticação** (hash) e **ID da transação** — únicos, podem servir
+  de chave de deduplicação na Fase 2 se o mesmo comprovante for
+  enviado 2x
+- **Canal** (ex.: "Celular")
+Pendente: comprovantes de outros bancos que o usuário usa (Banco
+Inter, etc.) — pedir quando chegarmos na Fase 2 pra confirmar se o
+layout varia muito entre eles.
 
 ### Como usar este documento no Claude Code
 Comece a Fase 1 pedindo ao Claude Code para: (a) inicializar o projeto na stack acima, (b) criar o schema com RLS, (c) implementar o CRUD e o cálculo do "livre do mês". Trate cada item numerado como um checkpoint de commit.
