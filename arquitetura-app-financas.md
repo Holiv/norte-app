@@ -550,3 +550,121 @@ pedir.
 
 **Fase 2 (ingestão sem fricção) — CONCLUÍDA.** Próxima fase só
 começa a pedido explícito do usuário.
+
+---
+
+## Fase 3 — Inteligência financeira (em andamento)
+
+Iniciada em 2026-07-19 a pedido do usuário. Antes de implementar, várias
+ambiguidades reais entre o CP3 e o CP4 precisaram ser fechadas — registradas
+abaixo porque mudam a arquitetura do "livre do mês" que está no ar desde a
+Fase 1.
+
+### Decisão — "Livre do mês" não muda de fórmula
+A fórmula do CP3 continua valendo tal como está: **Renda líquida recebida −
+contas fixas/dívidas obrigatórias − guarda mínima**. O CP4 descrevia o
+waterfall como se ele "consumisse" esse número (previdência, dívida extra,
+investimento bruto saindo dele) — mas isso tornaria o "livre do mês" mostrado
+hoje enganoso (pareceria sobrar mais do que realmente sobra). Decisão do
+usuário: investimentos e metas **não são obrigações** como dívida — só
+descontam do livre do mês quando o aporte é **efetivamente registrado**
+(evento real, com data), nunca por estarem apenas "planejados/configurados".
+O waterfall vira uma ferramenta 100% consultiva: sugere alocação ótima do
+livre do mês atual (dívida cara vs. investimento bruto), mas não desconta
+nada sozinho — o usuário decide se segue a sugestão e registra o aporte.
+
+### Decisão — Previdência privada é automática, não um aporte manual
+A previdência do usuário é descontada direto do salário bruto (nunca chega a
+aparecer no líquido que ele lança no app). Modelagem:
+- Configuração (tela de Investimentos): **salário bruto mensal**, **% do
+  bruto** que vira aporte próprio, **% de match da empresa** (aplicado sobre
+  o que o usuário aportou — hoje 1:1, ou seja, empresa iguala 100% do aporte
+  próprio), teto de match mensal opcional.
+- Todo mês, ao abrir o app, se ainda não existe o registro da previdência
+  daquele mês, o app calcula (bruto × %) e insere sozinho em
+  `investment_contributions` (tipo `proprio` e `contrapartida_empresa`) —
+  sem pedir confirmação, já que não é uma escolha do usuário mês a mês.
+- **Não desconta do livre do mês** (o dinheiro nunca passou pela conta do
+  usuário pra começar — já saiu no bruto→líquido).
+- **Sem aviso de "match não capturado"**: o usuário não vai fazer aportes
+  extras de previdência além do que já é automático — essa sugestão foi
+  removida do escopo. Quando o waterfall indicar espaço pra investir, o
+  destino é outros ativos (Tesouro Selic, ETFs internacionais como VT),
+  ou seja, o balde "investimento bruto".
+- Acompanhamento de saldo/rendimento composto da previdência (e dos demais
+  investimentos) fica pra Fase 4 — a Fase 3 só guarda o histórico de aportes
+  (soma acumulada), sem calcular rendimento.
+
+### Referência p/ Fase 4 — planilha de controle de investimentos do usuário
+O usuário tinha uma planilha própria (`docs/Controle de Investimentos
+Internacionais.xlsx`) que fazia acompanhamento de patrimônio e alocação por
+setor/país, incluindo look-through de ETFs. Parte dela quebrou (rodava com
+`GOOGLEFINANCE` no Google Sheets; ao baixar o arquivo, as fórmulas de cotação
+pararam de resolver — mas a lógica nas células continua íntegra e foi
+analisada campo a campo). Estrutura, pra quando a Fase 4 chegar:
+- **3 grupos de ativos**: Stocks (ações individuais), ETFs, REITs — cada
+  ativo com quantidade, cotação, cost basis, market value (qtd × cotação),
+  setor, país, e "Wallet %" (peso no patrimônio total). Também tem uma linha
+  de patrimônio em BTC e um "disponível para alocação" (cash).
+- **Look-through de ETF**: a parte mais sofisticada — cada ação individual
+  soma não só seu peso direto na carteira, mas também a exposição indireta
+  via ETFs que a contêm (ex: peso da AAPL dentro do XLK), chegando a um
+  "Total %" real de exposição àquele ativo/setor/país.
+- **Cada ETF tem sua própria aba** com top holdings (nome, peso %, setor,
+  país) mantidos **manualmente** (não tem fonte automática de holdings de
+  ETF via Google Finance — só cotação). Isso é o principal ponto de atenção
+  técnico pra Fase 4: replicar esse look-through exigiria ou manutenção
+  manual de holdings por ETF, ou uma API paga que forneça isso.
+- **Metas de alocação por setor e por país** ("Ideal %"), comparadas com o
+  peso atual (olhando através dos ETFs) pra calcular quanto falta alocar
+  (em R$) em cada categoria pra bater a meta.
+- Ativos são majoritariamente internacionais (ETFs Vanguard/iShares, ações
+  US, alguma exposição China/Brasil) — Fase 4 provavelmente precisa lidar
+  com câmbio (USD/BRL) na precificação, não só valor de mercado local.
+- Essa sofisticação (look-through + metas por setor/país) é claramente maior
+  que o item 13 do roadmap ("projeção de patrimônio: curvas nominal/real,
+  cenários") — quando a Fase 4 começar, vale abrir um checkpoint específico
+  só pra decidir quanto desse nível de detalhe entra na v1 do módulo.
+
+**Commit 1 — schema + motor "livre do mês" estendido:**
+- Migração `0005_investments_and_goals.sql`: tabelas `investments`,
+  `investment_contributions`, `goals`, `goal_contributions` + RLS
+  (detalhes de cada campo nas decisões acima).
+- `calcularLivreDoMes` (`src/lib/calc/livreDoMes.ts`) ganhou dois novos
+  descontos opcionais: soma de `investment_contributions` do mês corrente
+  com `investmentTipo === 'bruto'` (nunca `previdencia`) e soma de
+  `goal_contributions` do mês corrente. Testado com Vitest, incluindo o
+  caso que mais importa: aporte de previdência **não** desconta o livre
+  do mês.
+- Dashboard atualizado com as duas novas linhas ("Aportes em
+  investimentos", "Aportes em metas") no detalhamento expandido.
+
+**Commit 2 — páginas de Investimentos e Metas:**
+- `InvestmentsPage`: CRUD com formulário que muda de cara conforme o tipo
+  (previdência: salário bruto + % próprio + % match + teto opcional;
+  bruto: aporte mensal planejado + taxa de retorno). Botão "Registrar
+  aporte" só aparece pra investimento tipo `bruto` (previdência é
+  automática, sem ação do usuário).
+- `ensurePrevidenciaContribuicaoDoMes`: roda toda vez que a página
+  carrega; se não existe registro do mês corrente pra aquele
+  investimento de previdência, calcula (salário bruto × %) e insere
+  sozinho em `investment_contributions` (tipo `proprio` e, se
+  configurado, `contrapartida_empresa` respeitando o teto) — sem pedir
+  confirmação.
+- `GoalsPage`: CRUD de metas (modo `prazo` ou `aporte`) + registrar
+  aporte (`fixo`/`extra`) + motor de reprojeção
+  (`src/lib/calc/metaReprojection.ts`, puro, testado com Vitest,
+  fórmulas exatas do CP4). Card mostra o valor calculado ao vivo
+  (aporte necessário ou prazo estimado) toda vez que os aportes mudam.
+- Testado ponta a ponta em navegador headless: investimento bruto (criar,
+  registrar aporte, total acumulado atualiza), previdência (criar,
+  reload da página gera o aporte automático do mês sozinho — R$960
+  próprio + R$960 match pra 8% de R$12.000 com 100% de match — sem
+  aparecer no livre do mês, que continuou correto), meta (criar, ver
+  prazo estimado, registrar aporte, ver prazo recalculado). Sem erros de
+  console.
+- Nav (`AppShell`): novos itens "Investimentos" e "Metas" na navegação
+  secundária.
+
+**Pendente:** motor waterfall consultivo (item 9) integrado ao Dashboard
++ sugestão de gastos por categoria (item 11).

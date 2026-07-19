@@ -5,6 +5,8 @@ import {
   TrendingUp,
   CreditCard,
   Repeat,
+  PiggyBank,
+  Target,
   Settings,
   type LucideIcon,
 } from 'lucide-react'
@@ -25,6 +27,8 @@ export const SECONDARY_NAV = [
   { key: 'income', label: 'Rendas', icon: TrendingUp },
   { key: 'debts', label: 'Dívidas', icon: CreditCard },
   { key: 'fixedExpenses', label: 'Contas fixas', icon: Repeat },
+  { key: 'investments', label: 'Investimentos', icon: PiggyBank },
+  { key: 'goals', label: 'Metas', icon: Target },
   { key: 'settings', label: 'Configurações', icon: Settings },
 ] as const satisfies readonly NavItem[]
 

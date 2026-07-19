@@ -6,6 +6,8 @@ import { IncomePage } from './features/income/IncomePage'
 import { DebtsPage } from './features/debts/DebtsPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { FixedExpensesPage } from './features/fixedExpenses/FixedExpensesPage'
+import { InvestmentsPage } from './features/investments/InvestmentsPage'
+import { GoalsPage } from './features/goals/GoalsPage'
 import { SettingsPage } from './features/budget/SettingsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { AppShell } from './components/layout/AppShell'
@@ -44,6 +46,8 @@ function App() {
       {tab === 'income' && <IncomePage />}
       {tab === 'debts' && <DebtsPage />}
       {tab === 'fixedExpenses' && <FixedExpensesPage />}
+      {tab === 'investments' && <InvestmentsPage />}
+      {tab === 'goals' && <GoalsPage />}
       {tab === 'settings' && <SettingsPage />}
     </AppShell>
   )
