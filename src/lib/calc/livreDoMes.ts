@@ -2,6 +2,7 @@
 // Função pura: recebe dados já buscados, não acessa rede/Supabase — testável isolada.
 //
 // livre = rendaFixa + rendaVariavelRecebida - dividasAtivas - contasFixas - guardaMinima
+//         - aportesInvestimentoBruto - aportesMetas
 //
 // Regras (decisões registradas em arquitetura-app-financas.md):
 // - Renda fixa: sempre conta o valor_esperado da fonte (não depende de transação lançada).
@@ -10,6 +11,9 @@
 // - Dívida "ativa" no mês: hoje <= data_vencimento (data prevista de quitação final).
 // - Conta fixa: por padrão usa valor_esperado; se houver transação de saída do mês vinculada
 //   a ela (fixed_expense_id), usa a soma real lançada no lugar do esperado.
+// - Investimento/meta (Fase 3): só desconta o que foi de fato REGISTRADO no mês (nunca o
+//   "planejado"). Aportes de previdência nunca entram aqui — já saíram no bruto->líquido
+//   antes de chegar no app, contá-los de novo seria descontar duas vezes.
 
 export interface IncomeSourceCalcInput {
   id: string
@@ -36,12 +40,25 @@ export interface FixedExpenseCalcInput {
   valor_esperado: number
 }
 
+export interface InvestmentContributionCalcInput {
+  valor: number
+  data: string // 'YYYY-MM-DD'
+  investmentTipo: 'previdencia' | 'bruto'
+}
+
+export interface GoalContributionCalcInput {
+  valor: number
+  data: string // 'YYYY-MM-DD'
+}
+
 export interface LivreDoMesInput {
   incomeSources: IncomeSourceCalcInput[]
   transactions: TransactionCalcInput[]
   debts: DebtCalcInput[]
   fixedExpenses: FixedExpenseCalcInput[]
   reservaMinima: number
+  investmentContributions?: InvestmentContributionCalcInput[]
+  goalContributions?: GoalContributionCalcInput[]
   referenceDate?: Date
 }
 
@@ -60,6 +77,8 @@ export interface LivreDoMesResult {
   dividasAtivas: number
   contasFixas: number
   guardaMinima: number
+  aportesInvestimentoBruto: number
+  aportesMetas: number
   livre: number
   detalheContasFixas: FixedExpenseDetalhe[]
 }
@@ -112,9 +131,18 @@ export function calcularLivreDoMes(input: LivreDoMesInput): LivreDoMesResult {
 
   const contasFixas = detalheContasFixas.reduce((sum, d) => sum + d.usado, 0)
 
+  const aportesInvestimentoBruto = (input.investmentContributions ?? [])
+    .filter((c) => c.investmentTipo === 'bruto' && mesmoMes(c.data, referenceDate))
+    .reduce((sum, c) => sum + c.valor, 0)
+
+  const aportesMetas = (input.goalContributions ?? [])
+    .filter((c) => mesmoMes(c.data, referenceDate))
+    .reduce((sum, c) => sum + c.valor, 0)
+
   const rendaTotal = rendaFixa + rendaVariavelRecebida
   const guardaMinima = input.reservaMinima
-  const livre = rendaTotal - dividasAtivas - contasFixas - guardaMinima
+  const livre =
+    rendaTotal - dividasAtivas - contasFixas - guardaMinima - aportesInvestimentoBruto - aportesMetas
 
   return {
     rendaFixa,
@@ -123,6 +151,8 @@ export function calcularLivreDoMes(input: LivreDoMesInput): LivreDoMesResult {
     dividasAtivas,
     contasFixas,
     guardaMinima,
+    aportesInvestimentoBruto,
+    aportesMetas,
     livre,
     detalheContasFixas,
   }

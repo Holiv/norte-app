@@ -101,6 +101,14 @@ export function DashboardPage() {
                   </ul>
                 )}
                 <Row label="Guarda mínima" value={`− ${formatBRL(result.guardaMinima)}`} />
+                <Row
+                  label="Aportes em investimentos (registrados)"
+                  value={`− ${formatBRL(result.aportesInvestimentoBruto)}`}
+                />
+                <Row
+                  label="Aportes em metas (registrados)"
+                  value={`− ${formatBRL(result.aportesMetas)}`}
+                />
               </div>
 
               <div

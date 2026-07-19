@@ -130,6 +130,54 @@ describe('calcularLivreDoMes', () => {
     expect(result.livre).toBe(5200)
   })
 
+  it('desconta aporte de investimento bruto registrado no mês', () => {
+    const result = calcularLivreDoMes({
+      incomeSources: [{ id: 'sal', tipo: 'fixa', valor_esperado: 6000 }],
+      transactions: [],
+      debts: [],
+      fixedExpenses: [],
+      reservaMinima: 0,
+      investmentContributions: [{ valor: 1000, data: '2026-07-10', investmentTipo: 'bruto' }],
+      referenceDate: REF,
+    })
+    expect(result.aportesInvestimentoBruto).toBe(1000)
+    expect(result.livre).toBe(5000)
+  })
+
+  it('NÃO desconta aporte de previdência (já saiu no bruto->líquido antes de chegar no app)', () => {
+    const result = calcularLivreDoMes({
+      incomeSources: [{ id: 'sal', tipo: 'fixa', valor_esperado: 6000 }],
+      transactions: [],
+      debts: [],
+      fixedExpenses: [],
+      reservaMinima: 0,
+      investmentContributions: [
+        { valor: 480, data: '2026-07-01', investmentTipo: 'previdencia' },
+        { valor: 480, data: '2026-07-01', investmentTipo: 'previdencia' },
+      ],
+      referenceDate: REF,
+    })
+    expect(result.aportesInvestimentoBruto).toBe(0)
+    expect(result.livre).toBe(6000)
+  })
+
+  it('desconta aporte de meta registrado no mês, ignora fora do mês', () => {
+    const result = calcularLivreDoMes({
+      incomeSources: [{ id: 'sal', tipo: 'fixa', valor_esperado: 6000 }],
+      transactions: [],
+      debts: [],
+      fixedExpenses: [],
+      reservaMinima: 0,
+      goalContributions: [
+        { valor: 300, data: '2026-07-10' },
+        { valor: 999, data: '2026-06-30' },
+      ],
+      referenceDate: REF,
+    })
+    expect(result.aportesMetas).toBe(300)
+    expect(result.livre).toBe(5700)
+  })
+
   it('cenário combinado completo', () => {
     const result = calcularLivreDoMes({
       incomeSources: [
