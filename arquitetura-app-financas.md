@@ -423,3 +423,37 @@ do planejado originalmente:
 
 Pronto pra retomar a Fase 2 (Ingestão sem fricção) quando o usuário
 pedir.
+
+---
+
+## Fase 2 — Ingestão sem fricção (em andamento)
+
+**Commit 1 — infraestrutura (schema + storage + extração):**
+- Tabela `receipts` (id, user_id, arquivo, tipo, status, dados_extraidos
+  jsonb, erro_mensagem) com RLS. `transactions.receipt_id` (reservado
+  desde a Fase 1) ganhou a FK de verdade.
+- Bucket de Storage `comprovantes` (privado), RLS por pasta
+  `{user_id}/{arquivo}` via `storage.foldername(name)[1] = auth.uid()`.
+- `api/extract-receipt.ts` (Vercel Function): recebe `receiptId` +
+  JWT do usuário (Authorization: Bearer), baixa o arquivo do Storage
+  usando um client Supabase autenticado como o próprio usuário (sem
+  precisar de `service_role` — RLS resolve o acesso), chama a API de
+  visão da Anthropic (`claude-opus-4-8`, `output_config.format` com
+  JSON Schema pra saída estruturada — mais confiável que pedir JSON no
+  prompt e fazer parsing manual) e grava o resultado em `receipts`.
+- Schema de extração: valor, data, de_nome, para_nome, instituicao_de,
+  instituicao_para, chave_pix, autenticacao, id_transacao,
+  descricao_sugerida. A direção (entrada/saída) e a categoria **não**
+  são adivinhadas pelo modelo — ficam a cargo da tela de confirmação
+  (próximo commit), consistente com "extração sempre revisada" do CP5.
+- `tsconfig.api.json` criado (a pasta `api/` não era typecheckada
+  antes) e referenciado em `tsconfig.json`.
+- **Testado com o comprovante real** (Itaú, anexado 2026-07-18):
+  todos os campos batem exatamente (valor R$150, data 15/07/2026,
+  nomes, instituições, chave Pix, autenticação, ID da transação).
+  Custo observado: ~2850 tokens de entrada + ~230 de saída por
+  extração (frações de centavo).
+
+**Pendente:** UI de upload (escolher arquivo, sem câmera — decisão do
+usuário, já que ele não fotografa comprovante) + tela de confirmação
+(sempre) + categorização com aprendizado + reconciliação de extrato.

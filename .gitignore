@@ -16,8 +16,8 @@ dev-dist
 .env.*
 !.env.example
 
-# Claude Code local settings
-.claude/settings.local.json
+# Claude Code local session state
+.claude/
 
 # Editor directories and files
 .vscode/*
