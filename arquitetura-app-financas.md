@@ -184,6 +184,38 @@
 7. Categorização automática com aprendizado (memória favorecido→categoria).
 8. Motor de reconciliação de extrato (casa por valor+direção, multiplicidade, extrato como fonte da verdade que alerta divergências) + recálculo do mês.
 
+**Fase 2.5 — Sincronização automática via OneDrive (pós-Fase 2, opcional)**
+Adicionada em 2026-07-19, depois de avaliar viabilidade a pedido do usuário.
+Objetivo: usuário salva o comprovante numa pasta do OneDrive (já sincronizada
+nativamente no iPhone dele) e o app detecta e processa automaticamente, sem
+precisar abrir o app pra fazer upload manual — só confirmar depois.
+
+- Registro de app no Microsoft Entra ID (gratuito) com suporte a contas
+  pessoais Microsoft, pra permitir OAuth do OneDrive pessoal.
+- Fluxo "conectar OneDrive" no app (tela de Configurações) — cada usuário
+  autoriza a própria conta, token armazenado isolado por `user_id` (mesmo
+  padrão RLS do resto do app).
+- Assinatura de webhook da Microsoft Graph API na pasta designada (raiz ou
+  subpasta — funciona em OneDrive pessoal). Validade máxima ~30 dias
+  (42.300 min) — 1 cron job de renovação, bem dentro do limite de 1x/dia do
+  Vercel Hobby.
+- Endpoint (Vercel Function) recebe a notificação, baixa o arquivo novo,
+  roda a mesma extração via visão da Fase 2, salva como "pendente de
+  confirmação".
+- Tela de fila de confirmação ao abrir o app.
+- **Custo:** não deve gerar cobrança — uso padrão da Graph API é gratuito
+  dentro de limites de uso razoáveis; só APIs "metered" avançadas (não
+  usadas aqui) são pagas.
+- **Por que depois da Fase 2 simples:** evita depurar duas integrações
+  complexas novas (OCR + OAuth/webhook do OneDrive) ao mesmo tempo. Decisão
+  do usuário: validar o pipeline de extração/reconciliação com upload
+  manual primeiro, decidir depois se compensa.
+- Web Share Target API (compartilhar direto da folha de compartilhamento
+  do sistema) foi **descartada** como alternativa — não funciona no
+  iOS/Safari (WebKit não implementa), que é a plataforma principal do
+  usuário. OneDrive contorna essa limitação porque é sincronização de
+  arquivo nativa do SO, não depende do navegador.
+
 **Fase 3 — Inteligência financeira**
 9. Motor de alocação waterfall determinístico (proteger → matar dívida cara → maior retorno). Escape hatch manual.
 10. Metas com reprojeção dinâmica (aporte fixo = ritmo; extras = lump sums que antecipam prazo).
