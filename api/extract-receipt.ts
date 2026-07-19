@@ -1,12 +1,47 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
-import { EXTRACTED_RECEIPT_JSON_SCHEMA } from '../src/features/receipts/extractionSchema'
 import type { ExtractedReceiptData } from '../src/features/receipts/types'
 
 const EXTRACTION_PROMPT = `Extraia os dados desse comprovante de Pix (transferência bancária).
 Preencha todos os campos do schema; use null nos campos que não encontrar no documento.
 "descricao_sugerida" deve ser curta, no formato "Pix para {para_nome}" (ou "Pix de {de_nome}" se fizer mais sentido).`
+
+// Embutido aqui (em vez de importado de src/features/receipts) porque o
+// Node.js do runtime da Vercel não resolve imports de valor cruzando pastas
+// fora de api/ em ESM (ERR_MODULE_NOT_FOUND) — só import type é seguro,
+// já que é totalmente removido do JS compilado.
+const EXTRACTED_RECEIPT_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    valor: { type: 'number', description: 'Valor da transação em reais, ex: 150.00' },
+    data: { type: 'string', description: 'Data no formato YYYY-MM-DD' },
+    de_nome: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    para_nome: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    instituicao_de: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    instituicao_para: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    chave_pix: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    autenticacao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    id_transacao: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    descricao_sugerida: {
+      type: 'string',
+      description: 'Descrição curta sugerida, ex: "Pix para Fulano"',
+    },
+  },
+  required: [
+    'valor',
+    'data',
+    'de_nome',
+    'para_nome',
+    'instituicao_de',
+    'instituicao_para',
+    'chave_pix',
+    'autenticacao',
+    'id_transacao',
+    'descricao_sugerida',
+  ],
+  additionalProperties: false,
+} as const
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
