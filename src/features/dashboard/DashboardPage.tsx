@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { fetchLivreDoMes } from './api'
+import { fetchLivreDoMes, fetchSpendingSuggestion, fetchWaterfallSuggestion } from './api'
 import type { LivreDoMesResult } from '../../lib/calc/livreDoMes'
+import type { WaterfallResult } from '../../lib/calc/waterfall'
+import type { SpendingSuggestionResult } from '../../lib/calc/spendingSuggestion'
 import { Card, Button, Badge } from '../../components/ui'
 
 function formatBRL(valor: number): string {
@@ -15,6 +17,8 @@ function mesAtualLabel(): string {
 
 export function DashboardPage() {
   const [result, setResult] = useState<LivreDoMesResult | null>(null)
+  const [waterfall, setWaterfall] = useState<WaterfallResult | null>(null)
+  const [spending, setSpending] = useState<SpendingSuggestionResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -27,7 +31,14 @@ export function DashboardPage() {
     setLoading(true)
     setError(null)
     try {
-      setResult(await fetchLivreDoMes())
+      const livre = await fetchLivreDoMes()
+      setResult(livre)
+      const [waterfallResult, spendingResult] = await Promise.all([
+        fetchWaterfallSuggestion(livre.livre),
+        fetchSpendingSuggestion(livre.livre),
+      ])
+      setWaterfall(waterfallResult)
+      setSpending(spendingResult)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -123,6 +134,56 @@ export function DashboardPage() {
               </div>
             </div>
           )}
+        </Card>
+      )}
+
+      {waterfall &&
+        (waterfall.quitacaoExtraSugerida.length > 0 ||
+          waterfall.investimentoBrutoSugerido > 0 ||
+          waterfall.restanteNaoAlocado > 0) && (
+          <Card>
+            <p className="mb-3 text-sm font-medium text-ink">
+              Sugestão de alocação do livre do mês
+            </p>
+            <div className="flex flex-col gap-2">
+              {waterfall.quitacaoExtraSugerida.map((d) => (
+                <Row
+                  key={d.id}
+                  label={`Quitar extra — ${d.nome} (${(d.taxaJurosAnual * 100).toFixed(1)}% a.a.)`}
+                  value={formatBRL(d.valorSugerido)}
+                />
+              ))}
+              {waterfall.investimentoBrutoSugerido > 0 && (
+                <Row label="Investimento bruto" value={formatBRL(waterfall.investimentoBrutoSugerido)} />
+              )}
+              {waterfall.restanteNaoAlocado > 0 && (
+                <p className="text-xs text-ink-muted">
+                  {formatBRL(waterfall.restanteNaoAlocado)} sem destino sugerido — cadastre um
+                  investimento bruto em Investimentos pra receber sugestão aqui.
+                </p>
+              )}
+            </div>
+            <p className="mt-3 text-xs text-ink-muted">
+              Sugestão matemática, não é executada automaticamente — registre o aporte em
+              Investimentos ou ajuste o saldo da dívida quando decidir seguir.
+            </p>
+          </Card>
+        )}
+
+      {spending && spending.categorias.length > 0 && (
+        <Card>
+          <p className="mb-3 text-sm font-medium text-ink">
+            Sugestão de gastos por categoria
+          </p>
+          <div className="flex flex-col gap-2">
+            {spending.categorias.map((c) => (
+              <Row key={c.categoryId} label={c.nome} value={formatBRL(c.sugestao)} />
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-ink-muted">
+            Baseado na sua média de gastos discricionários dos últimos meses, distribuída sobre
+            o livre do mês atual.
+          </p>
         </Card>
       )}
     </div>

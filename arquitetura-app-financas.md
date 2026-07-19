@@ -666,5 +666,37 @@ analisada campo a campo). Estrutura, pra quando a Fase 4 chegar:
 - Nav (`AppShell`): novos itens "Investimentos" e "Metas" na navegação
   secundária.
 
-**Pendente:** motor waterfall consultivo (item 9) integrado ao Dashboard
-+ sugestão de gastos por categoria (item 11).
+**Commit 3 — waterfall consultivo + sugestão de gastos, no Dashboard:**
+- `calcularWaterfall` (`src/lib/calc/waterfall.ts`, puro, testado com
+  Vitest): dado o livre do mês atual, a maior taxa de retorno entre os
+  investimentos tipo `bruto` cadastrados, e as dívidas ativas (mesmo
+  filtro de "ativa" do motor de livre do mês, mais saldo devedor > 0),
+  rankeia dívidas por taxa decrescente e sugere quitação extra pra
+  toda dívida com taxa maior que o retorno do investimento — sobra vai
+  de sugestão pro investimento bruto. 100% consultivo: só sugere, não
+  desconta nada e não grava nada sozinho — o usuário decide se segue,
+  registrando o aporte em Investimentos ou ajustando o saldo da dívida
+  em Dívidas, do jeito que já existia antes.
+- `calcularSugestaoDeGastos` (`src/lib/calc/spendingSuggestion.ts`,
+  puro, testado com Vitest): média de gasto discricionário (exclui
+  transações vinculadas a conta fixa) por categoria nos últimos 3
+  meses, distribuída proporcionalmente sobre o livre do mês atual.
+  Categoria sem histórico no período fica de fora.
+- Dashboard ganhou duas seções novas (só aparecem quando há algo pra
+  sugerir): "Sugestão de alocação do livre do mês" e "Sugestão de
+  gastos por categoria".
+- Testado ponta a ponta: dívida de 20% a.a. (saldo R$500) + investimento
+  bruto de 8% a.a. + livre do mês de R$7.500 → sugeriu quitar os R$500
+  da dívida (única acima da taxa de corte) e destinar os R$7.000
+  restantes ao investimento bruto; 3 meses de histórico numa única
+  categoria → sugestão de gastos alocou 100% do livre nela (matemática
+  correta pro cenário). Sem erros de console **em produção**; em dev
+  apareceu um 401 transitório numa das requisições do Dashboard —
+  investigado e é artefato do StrictMode (efeitos duplicados só em
+  dev), não reproduz em build de produção e não é um bug novo desta
+  fase (o padrão `useEffect(() => refresh(), [])` sem cancelamento já
+  existe em todas as páginas desde a Fase 1 — o Dashboard só ficou mais
+  suscetível por disparar ~11 queries concorrentes no mount agora).
+
+**Fase 3 (inteligência financeira) — CONCLUÍDA.** Próxima fase só
+começa a pedido explícito do usuário.
