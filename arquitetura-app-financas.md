@@ -295,3 +295,10 @@ GitHub (`Holiv/norte-app`, branch `main`). Deploy no Vercel ainda não
 foi feito — próximo passo natural antes de considerar a Fase 1
 "em uso real", ou já emendar direto na Fase 2 conforme o usuário
 decidir.
+
+**Deploy (Vercel):** projeto `norte-app` importado do GitHub via
+dashboard Vercel (deploy automático a cada push em `main`, preview em
+outras branches/PRs). Env vars de produção configuradas
+(`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). URL de produção:
+https://norte-app-lyart.vercel.app — testado ponta a ponta (cadastro,
+login, dashboard) direto em produção, sem erros de console.
